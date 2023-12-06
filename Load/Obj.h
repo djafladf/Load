@@ -30,6 +30,7 @@ public:
 
 	GLuint vao;
 	GLuint buffer;
+	vec3 MID, SCALE;
 	bool bInitialized;
 	void Draw(GLuint program);
 };
@@ -54,59 +55,63 @@ GLuint MyObj::Init(string path)
 	if(bInitialized == true) return vao;
 	ifstream file(path);
 	string line,temp;
-	deque<string> res;
 	deque<vec3> vecs;
-	list<deque<int>> vecInfs;
+	deque<deque<int>> vecInfs;
 
-	float minX = 1000, maxX = -1000;
-	float minY = 1000, maxY = -1000;
-	float minZ = 1000, maxZ = -1000;
-	vec3 MID = vec3(0, 0, 0);
+	bool Init = true;
+	float minX = 0, maxX = 0;
+	float minY = 0, maxY = 0;
+	float minZ = 0, maxZ = 0;
 	while (getline(file, line)) 
 	{
-		if (line == "") continue;
-		// read Line
-		res.clear();
-		stringstream ss(line);
-		while (getline(ss, temp, ' ')) res.push_back(temp);
-		string first = res.front(); res.pop_front();
-		// Decode
-		if (first == "v") for (int i = 0; i < res.size(); i += 3) 
+		if (line.size() == 0 || line.at(0) == '#') continue;
+		istringstream is(line);
+		string sub; is >> sub;
+		if (sub == "v")
 		{
-			float x = stof(res[i]); minX = min(x, minX); maxX = max(x, maxX);
-			float y = stof(res[i + 1]); minY = min(y, minY); maxY = max(y, maxY);
-			float z = stof(res[i + 2]);	minZ = min(z, minZ); maxZ = max(z, maxZ);
-			MID += vec3(x,y,z);
-			vecs.push_back(vec3(x,y,z));
+			vec3 cnt;
+			is >> cnt.x >> cnt.y >> cnt.z;
+			if (Init) 
+			{
+				Init = false; 
+				minX = maxX = cnt.x;
+				minY = maxY = cnt.y;
+				minZ = maxZ = cnt.z;
+			}
+			else 
+			{
+				minX = min(cnt.x, minX); maxX = max(cnt.x, maxX);
+				minY = min(cnt.y, minY); maxY = max(cnt.y, maxY);
+				minZ = min(cnt.z, minZ); maxZ = max(cnt.z, maxZ);
+			} 
+			vecs.push_back(cnt);
 		}
-		else if (first == "f") for (int i = 0; i < res.size(); i += 3) 
+		else if (sub == "f") 
 		{
-			vecInfs.push_back({ stoi(res[i]), stoi(res[i + 1]), stoi(res[i + 2]) });
+			int x, y, z;
+			is >> x >> y >> z;
+			vecInfs.push_back({x,y,z});
 		}
 	}
-	cout << "Load End" << endl;
+	cout << "Load End\n";
 	NumVertices = vecInfs.size() * 3;
 	Vertices = new MyObjVertex [NumVertices];
 
 	int cur = 0;
-	auto it = vecInfs.begin();
 
-	int i = 0;
-	MID = MID / vecs.size();
-	vec3 MIN = vec3(minX, minY, minZ);
-	vec3 MAX = vec3(maxX, maxY, maxZ) - MIN; MAX = vec3(1 / MAX[0], 1 / MAX[1], 1 / MAX[2]);
-	MID = (MID - MIN) * MAX;
-	while (it != vecInfs.end()) 
+	MID = vec3((maxX + minX) * 0.5, (maxY + minY) * 0.5, (maxZ + minZ) * 0.5);
+	SCALE = vec3(1 / (maxX - minX), 1 / (maxY - minY), 1 / (maxZ - minZ)) * 0.5;
+	MID = MID* SCALE;
+	for (int i = 0; i < vecInfs.size(); i++) 
 	{
-		auto inf = *it;
-		vec3 a = (vecs[inf[0] - 1] - MIN) * MAX - MID;
-		vec3 b = (vecs[inf[1] - 1] - MIN) * MAX - MID;
-		vec3 c = (vecs[inf[2] - 1] - MIN) * MAX - MID;
+		auto inf = vecInfs[i];
+		vec3 a = vecs[inf[0] - 1];
+		vec3 b = vecs[inf[1] - 1];
+		vec3 c = vecs[inf[2] - 1];
 		vec3 n = normalize(cross(b - a, c - a));
 		Vertices[cur].position = a;	Vertices[cur].normal = n; cur++;
 		Vertices[cur].position = b;	Vertices[cur].normal = n; cur++;
 		Vertices[cur].position = c;	Vertices[cur].normal = n; cur++;
-		it++;
 	}
 
 	glGenVertexArrays(1, &vao);

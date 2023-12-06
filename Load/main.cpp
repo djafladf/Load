@@ -22,6 +22,15 @@ int winHeight = 500;
 bool play = false;
 int phong = 1;
 
+float g_Spec = 0.3;
+float g_Shine = 50;
+
+float Ex = 0;
+float Ey = 0;
+float Ez = 0;
+
+int RT = 0;
+
 mat4 myLookAt(vec3 eye, vec3 at, vec3 up)
 {
 	// Implement your own look-at function
@@ -101,6 +110,7 @@ void myInit()
 	string path;
 	getline(cin, path);
 	Obj.Init(path);
+	//bj.Init("Cube.obj");
 
 	program = InitShader("vshader.glsl", "fshader.glsl");
 	prog_phong = InitShader("vphong.glsl", "fphong.glsl");
@@ -155,7 +165,8 @@ void display()
 	glEnable(GL_DEPTH_TEST);
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-	mat4 ViewMat = myLookAt(vec3(2, 2, 2), vec3(0, 0, 0), vec3(0, 1, 0));
+
+	mat4 ViewMat = myLookAt(vec3(1, 1, 1) * 3, vec3(0, 0, 0), vec3(0, 1, 0));
 
 	float aspect = winWidth / (float)winHeight;
 	float h = 1;
@@ -175,7 +186,7 @@ void display()
 	GLuint uProjMat = glGetUniformLocation(prog_phong, "uProjMat");
 	GLuint uModelMat = glGetUniformLocation(prog_phong, "uModelMat");
 
-	mat4 ModelMat = RotateY(g_Time * 90);
+	mat4 ModelMat = Translate(-Obj.MID) * RotateX(Ex * 90) * RotateY(Ey*90) * RotateZ(Ez * 90) * Scale(Obj.SCALE);
 	glUniformMatrix4fv(uProjMat, 1, GL_TRUE, ProjMat);
 	glUniformMatrix4fv(uModelMat, 1, GL_TRUE, ViewMat * ModelMat);
 
@@ -184,8 +195,7 @@ void display()
 	vec4 LCol = vec4(1, 1, 1, 1);
 	vec4 KAmb = vec4(0.1, 0.1, 0.2, 1);
 	vec4 KDif = vec4(1.0, 0.8, 0.5, 1);
-	vec4 KSpc = vec4(0.3, 0.3, 0.3, 1);
-	float Shine = 50;
+	vec4 KSpc = vec4(1, 1, 1, 1) * g_Spec;
 
 	GLuint uLPos = glGetUniformLocation(prog_phong, "uLPos");
 	GLuint uLCol = glGetUniformLocation(prog_phong, "uLCol");
@@ -200,7 +210,7 @@ void display()
 	glUniform4f(uKAmb, KAmb[0], KAmb[1], KAmb[2], KAmb[3]);
 	glUniform4f(uKDif, KDif[0], KDif[1], KDif[2], KDif[3]);
 	glUniform4f(uKSpc, KSpc[0], KSpc[1], KSpc[2], KSpc[3]);
-	glUniform1f(uShine, Shine);
+	glUniform1f(uShine, g_Shine);
 	glUniform1i(uPhong, phong);
 
 
@@ -213,7 +223,13 @@ void display()
 
 void idle()
 {
-	if(play) g_Time += 0.016;
+	if (play) 
+	{
+		g_Time += 0.016;
+		if (RT == 0) Ex += 0.016;
+		else if (RT == 1) Ey += 0.016;
+		else Ez += 0.016;
+	}
 	Sleep(16);					// for vSync
 	glutPostRedisplay();
 }
@@ -226,7 +242,19 @@ void keyboard(unsigned char ch, int x, int y)
 	case ' ': play = !play; break;
 	case '1': phong = 1; break;
 	case '2': phong = 0; break;
+	case '3': if (g_Spec < 1) g_Spec += 0.1f; break;
+	case '4': if (g_Spec > 0.1) g_Spec -= 0.1f; break;
+	case '5': if (g_Shine > 10) g_Shine -= 10; break;
+	case '6': if (g_Shine < 100) g_Shine += 10; break;
 	}
+	printf("%f,%f\n", g_Shine, g_Spec);
+}
+
+void mouse(int button, int state, int x, int y) 
+{
+	if (button == GLUT_LEFT_BUTTON) RT = 0;
+	else if (button == GLUT_MIDDLE_BUTTON) RT = 1;
+	else if (button == GLUT_RIGHT_BUTTON) RT = 2;
 }
 
 void reshape(int w, int h)
@@ -256,6 +284,7 @@ int main(int argc, char** argv)
 	myInit();
 	glutDisplayFunc(display);
 	glutIdleFunc(idle);
+	glutMouseFunc(mouse);
 	glutKeyboardFunc(keyboard);
 	glutReshapeFunc(reshape);
 	glutMainLoop();
