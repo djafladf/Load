@@ -27,7 +27,7 @@ public:
 	int NumVertices;
 
 	MyObjVertex * Vertices;
-	GLuint Init(FILE* file);
+	GLuint Init(string path);
 	void SetPositionAndOtherAttributes(GLuint program);
 
 	GLuint vao;
@@ -55,10 +55,12 @@ MyObj::~MyObj(void)
 #include <stdio.h>
 #include <time.h>
 
-GLuint MyObj::Init(FILE* file)
+GLuint MyObj::Init(string path)
 {
 	time_t start, end;
 	if(bInitialized == true) return vao;
+	FILE* file = fopen(path.c_str(), "r");
+	if (file == NULL) return  vao;
 	start = clock();
 	deque<vec3> vecs;
 	deque<deque<int>> Config;

@@ -2,6 +2,7 @@
 
 in  vec4 vPosition;
 in  vec3 vNormal;
+in	vec3 vSmooth;
 
 out vec3 L3;
 out vec3 N3;
@@ -26,8 +27,8 @@ void main()
 	vec4 L = uLPos - P;
 	L3 = normalize(L.xyz);
 	vec4 N;
-	if(uPhong == 1) N = uModelMat*vec4(vPosition.xyz,0);
-	else N = uModelMat*vec4(vNormal,0);
+	if(uPhong == 1) N = uModelMat*vec4(vSmooth.xyz,0);
+	else N = uModelMat*vec4(vNormal.xyz,0);
 	
 	N3 = normalize(N.xyz);					// camera coord.
 	vec4 V = vec4(0,0,0,1) - P;

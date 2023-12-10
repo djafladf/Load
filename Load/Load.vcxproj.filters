@@ -20,10 +20,13 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Obj.h">
+    <ClInclude Include="MyCube.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="MyCube.h">
+    <ClInclude Include="Obj_Normal.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Obj_Thread.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

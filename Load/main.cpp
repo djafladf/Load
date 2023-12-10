@@ -5,6 +5,9 @@
 
 #include <vec.h>
 #include <mat.h>
+#define ROTATEX 0
+#define ROTATEY 1
+#define ROTATEZ 2
 
 MyCube cube;
 MyObj Obj;
@@ -104,12 +107,10 @@ mat4 myPerspective(float fovy, float aspectRatio, float zNear, float zFar)
 	return P;
 }
 
-void myInit()
+void myInit(FILE * file)
 {
 	cube.Init();
-	string path;
-	getline(cin, path);
-	Obj.Init(path);
+	Obj.Init(file);
 	//bj.Init("Cube.obj");
 
 	program = InitShader("vshader.glsl", "fshader.glsl");
@@ -166,7 +167,8 @@ void display()
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
 
-	mat4 ViewMat = myLookAt(vec3(1, 1, 1) * 3, vec3(0, 0, 0), vec3(0, 1, 0));
+	mat4 ViewMat = myLookAt(vec3(1,0,1) * 3, vec3(0, 0, 0), vec3(0, 1, 0));
+	//if(RT == ROTATEX) ViewMat = myLookAt(vec3(sin(Ex), sin(Ey), sin(Ez)) * 3, vec3(0, 0, 0), vec3(0, 1, 0));
 
 	float aspect = winWidth / (float)winHeight;
 	float h = 1;
@@ -186,7 +188,7 @@ void display()
 	GLuint uProjMat = glGetUniformLocation(prog_phong, "uProjMat");
 	GLuint uModelMat = glGetUniformLocation(prog_phong, "uModelMat");
 
-	mat4 ModelMat = Translate(-Obj.MID) * RotateX(Ex * 90) * RotateY(Ey*90) * RotateZ(Ez * 90) * Scale(Obj.SCALE);
+	mat4 ModelMat = RotateX(Ex * 90) * RotateY(Ey * 90) * RotateZ(Ez * 90) * Scale(Obj.SCALE);
 	glUniformMatrix4fv(uProjMat, 1, GL_TRUE, ProjMat);
 	glUniformMatrix4fv(uModelMat, 1, GL_TRUE, ViewMat * ModelMat);
 
@@ -226,8 +228,8 @@ void idle()
 	if (play) 
 	{
 		g_Time += 0.016;
-		if (RT == 0) Ex += 0.016;
-		else if (RT == 1) Ey += 0.016;
+		if (RT == ROTATEX) Ex += 0.016;
+		else if (RT == ROTATEY) Ey += 0.016;
 		else Ez += 0.016;
 	}
 	Sleep(16);					// for vSync
@@ -247,14 +249,13 @@ void keyboard(unsigned char ch, int x, int y)
 	case '5': if (g_Shine > 10) g_Shine -= 10; break;
 	case '6': if (g_Shine < 100) g_Shine += 10; break;
 	}
-	printf("%f,%f\n", g_Shine, g_Spec);
 }
 
 void mouse(int button, int state, int x, int y) 
 {
-	if (button == GLUT_LEFT_BUTTON) RT = 0;
-	else if (button == GLUT_MIDDLE_BUTTON) RT = 1;
-	else if (button == GLUT_RIGHT_BUTTON) RT = 2;
+	if (button == GLUT_LEFT_BUTTON) RT = ROTATEX;
+	else if (button == GLUT_MIDDLE_BUTTON) RT = ROTATEY;
+	else if (button == GLUT_RIGHT_BUTTON) RT = ROTATEZ;
 }
 
 void reshape(int w, int h)
@@ -265,23 +266,31 @@ void reshape(int w, int h)
 	glutPostRedisplay();
 }
 
-
+#include<cstdio>
+using namespace std;
 int main(int argc, char** argv)
 {
 	glutInit(&argc, argv);
 
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
 	glutInitWindowSize(winWidth, winHeight);
+	string path;
+	getline(cin, path);
+	FILE* file;
+	while (true)
+	{
+		file = fopen(path.c_str(), "r");
+		if (file) break;
+		cout << "Can't find File : '" + path + "'!\n";
+		getline(cin, path);
+	}
 
 	glutCreateWindow("OpenGL");
 
 	glewExperimental = true;
 	glewInit();
 
-	printf("OpenGL %s, GLSL %s\n", glGetString(GL_VERSION),
-		glGetString(GL_SHADING_LANGUAGE_VERSION));
-
-	myInit();
+	myInit(file);
 	glutDisplayFunc(display);
 	glutIdleFunc(idle);
 	glutMouseFunc(mouse);

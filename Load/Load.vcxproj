@@ -23,7 +23,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MyCube.h" />
-    <ClInclude Include="Obj.h" />
+    <ClInclude Include="Obj_Normal.h" />
+    <ClInclude Include="Obj_Thread.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="fphong.glsl" />
